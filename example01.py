@@ -16,8 +16,10 @@ fig, ax = plt.subplots(figsize=(5, 5))
 ax.set(xlim=(-25, 150), ylim=(0, 130))
 
 scat = ax.scatter([], [],s=1 )
-
-def animate(i):
+scat.set_cmap('jet')
+nframes = 8
+frames = []
+for i in range(0,nframes):
     node1 = pf.Node(1,0,0)
     node1.fix()
     
@@ -32,17 +34,24 @@ def animate(i):
     
     vertical_tube = pf.Circular_Tube(6.449, 6.197)
     horizontal_tube = pf.Circular_Tube(4.647, 4.291)
-    
-    element1 = pf.Element(1,node1,node2, 30E6, vertical_tube)
-    element2 = pf.Element(2,node2,node3, 30E6, horizontal_tube)
-    element3 = pf.Element(3,node3,node4, 30E6, vertical_tube)
+    steel = pf.Material(30E6,36E3,0.284)
+    element1 = pf.Element(1,node1,node2, steel, vertical_tube)
+    element2 = pf.Element(2,node2,node3, steel, horizontal_tube)
+    element3 = pf.Element(3,node3,node4, steel, vertical_tube)
     
     frame = pf.Structure([element1,element2,element3], [node1,node2,node3,node4])
     frame.solve()
     frame.calc_VMstress()
-    scat.set_offsets(np.c_[frame.x_values,frame.y_values])
-    scat.set_array(np.asarray(frame.von_misses))
-    scat.set_cmap('jet')
+    frames.append(frame)
+    
+def animate(i):
+    if i<nframes:
+        scat.set_offsets(np.c_[frames[i].x_values,frames[i].y_values])
+        scat.set_array(np.asarray(frames[i].von_misses))
+    else:
+        scat.set_offsets(np.c_[frames[2*(nframes-1)-i].x_values,frames[2*(nframes-1)-i].y_values])
+        scat.set_array(np.asarray(frames[2*(nframes-1)-i].von_misses))
+    
 
-ani = FuncAnimation(fig, animate, frames=8, interval=100, repeat=True) 
+ani = FuncAnimation(fig, animate, frames=2*(nframes-1), interval=200, repeat=True) 
 plt.show()
