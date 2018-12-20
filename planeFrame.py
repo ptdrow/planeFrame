@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+planeFrame v0.2.0
 Created on Wed Dec 12 11:32:34 2018
 
 @author: Pedro Villarroel @ptdrow
@@ -54,9 +55,9 @@ class Circular_Tube(Cross_Section):
     
 class Element:
     def __init__(self, number, first_node, second_node,
-                 Young_module, cross_section):
+                 material, cross_section):
         self.number = number
-        self.E = Young_module
+        self.material = material
         self.cSection = cross_section
         self.setNodes(first_node, second_node)
         self.calcVariables()
@@ -69,8 +70,9 @@ class Element:
         self.delta_y = self.node2.y - self.node1.y
         self.L = math.sqrt(pow(self.delta_x , 2) + pow(self.delta_y , 2))
         self.alfa = math.atan2(self.delta_y , self.delta_x)
-        self.c1 = self.cSection.A * self.E / self.L
-        self.c2 = self.E * self.cSection.I / pow(self.L,3)
+        self.c1 = self.cSection.A * self.material.E / self.L
+        self.c2 = self.material.E * self.cSection.I / pow(self.L,3)
+        self.weight = self.L * self.cSection.A * self.material.d
     
     def setNodes(self, new_node1, new_node2):
         self.node1 = new_node1
