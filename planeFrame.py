@@ -10,14 +10,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Node:
-    count = 0
-    nodes = []
     def __init__(self, number, x_coordinate, y_coordinate):
         self.number = number
         self.x = x_coordinate
         self.y = y_coordinate
-        Node.nodes.append(self)
-        Node.count += 1
         self.setForces()
         self.setDofs()
     
@@ -57,9 +53,6 @@ class Circular_Tube(Cross_Section):
 
     
 class Element:
-    count = 0
-    elements = []
-    
     def __init__(self, number, first_node, second_node,
                  Young_module, cross_section):
         self.number = number
@@ -68,8 +61,6 @@ class Element:
         self.setNodes(first_node, second_node)
         self.calcVariables()
         self.createKLocal()
-        Element.elements.append(self)
-        Element.count += 1
         self.displacements = np.zeros(6)
         self.forces = np.zeros(6)
     
@@ -182,10 +173,11 @@ class Structure:
         self.displacements[self.dofs] = np.dot(np.linalg.inv(KReduced),FReduced)
         
     def solve_local_forces(self):
-        for e in Element.elements:
+        for e in self.elements:
             for i in range (0, 3):
                 e.displacements[ i ]   = self.displacements[(e.node1.number-1)*3 + i] 
                 e.displacements[3 + i] = self.displacements[(e.node2.number-1)*3 + i]
+                
             e.forces = np.linalg.multi_dot([e.KLocal_e, e.T, e.displacements])
             
     def calc_VMstress(self, n=18,r=10):
@@ -220,3 +212,11 @@ class Structure:
         plt.colorbar()
         plt.show()
 
+class Material:
+    def __init__(self, Young_module, yield_strength, density):
+        self.E = Young_module
+        self.Sy = yield_strength
+        self.d = density
+        
+
+    
