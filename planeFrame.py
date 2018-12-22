@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-planeFrame v0.2.0
+planeFrame v0.2.1
 Created on Wed Dec 12 11:32:34 2018
 
 @author: Pedro Villarroel @ptdrow
@@ -39,6 +39,7 @@ class Circular_Tube(Cross_Section):
         self.ri = radius_internal
         self.A = math.pi * (pow(self.re,2) - pow(self.ri,2))
         self.I = math.pi * (pow(self.re,4) - pow(self.ri,4)) / 4
+        self.h = radius_external
     
     def calc_Qdivb(self,y):
         y1 = abs(y)
@@ -51,7 +52,33 @@ class Circular_Tube(Cross_Section):
         else:
             Qdivb = 1/3 * (self.re**2 - y1**2 ) #for avoiding errors at y1 = re because b=0
             return Qdivb
+        
+class Rectangular_Tube(Cross_Section):
+    def __init__(self, height, width, thickness):
+        self.h = height
+        self.w = width
+        self.e = thickness
+        hi = self.h - 2 * self.e
+        wi = self.w - 2 * self.e
+        self.A = self.w * self.h - wi * hi
+        self.I = (self.w * self.h ** 3 - wi * hi ** 3)/ 12
+        
+    def calc_Qdivb(self,y):
+        y1 = abs(y)
+        if y1 < (self.h/2-self.e):
+            Qdivb = (self.e**2 - self.e*(self.w/2-self.h)+self.h**2/4+self.h*self.w/2-y1**2)/2
+        else:
+            Qdivb = self.h**2/8 - y1**2 /2
+            
+        return Qdivb
 
+
+class Material:
+    def __init__(self, Young_module, yield_strength, density):
+        self.E = Young_module
+        self.Sy = yield_strength
+        self.d = density
+    
     
 class Element:
     def __init__(self, number, first_node, second_node,
@@ -135,7 +162,15 @@ class Structure:
         self.nodes = nodes
         self.e_count = len(elements)
         self.n_count = len(nodes)
+        self.weight = self.calc_weight()
         
+    def calc_weight(self):
+        weight = 0
+        for e in self.elements:
+            weight += e.weight
+        
+        return weight
+            
     def solve(self):
         self.assembly_KGlobal()
         self.apply_BC()
@@ -192,10 +227,10 @@ class Structure:
             u = - e.L/m
             for i in range(0, m+1):
                 u += e.L/m
-                v = (n+2)/n*e.cSection.re
+                v = (n+2)/n*e.cSection.h
                 for j in range(0, n+1):
                     k +=1
-                    v -= 2*e.cSection.re/n
+                    v -= 2*e.cSection.h/n
                     x_values[k] = e.node1.x + u * e.delta_x/e.L - v * e.delta_y/e.L
                     y_values[k] = e.node1.y + u * e.delta_y/e.L + v * e.delta_x/e.L
                     von_misses[k] = e.von_misses_stress(u, v)        
@@ -213,12 +248,6 @@ class Structure:
         plt.xlabel('x')
         plt.colorbar()
         plt.show()
-
-class Material:
-    def __init__(self, Young_module, yield_strength, density):
-        self.E = Young_module
-        self.Sy = yield_strength
-        self.d = density
         
 
     
