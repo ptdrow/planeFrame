@@ -33,6 +33,10 @@ class Cross_Section:
         self.A = area
         self.I = moment_of_inertia
     
+    def doubleSection(self):
+        self.A = 2*self.A
+        self.I = 2*self.I
+    
 class Circular_Tube(Cross_Section):
     def __init__(self, radius_external, radius_internal):
         self.re = radius_external
