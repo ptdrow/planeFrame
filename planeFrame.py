@@ -29,21 +29,23 @@ class Node:
 
 
 class Cross_Section:
-    def __init__(self, area, moment_of_inertia):
+    def __init__(self, area, moment_of_inertia, Id = None):
         self.A = area
         self.I = moment_of_inertia
+        self.Id =Id
     
     def doubleSection(self):
         self.A = 2*self.A
         self.I = 2*self.I
     
 class Circular_Tube(Cross_Section):
-    def __init__(self, radius_external, radius_internal):
+    def __init__(self, radius_external, radius_internal, Id = None):
         self.re = radius_external
         self.ri = radius_internal
         self.A = math.pi * (pow(self.re,2) - pow(self.ri,2))
         self.I = math.pi * (pow(self.re,4) - pow(self.ri,4)) / 4
         self.h = radius_external
+        self.Id =Id
     
     def calc_Qdivb(self,y):
         y1 = abs(y)
@@ -58,10 +60,14 @@ class Circular_Tube(Cross_Section):
             return Qdivb
         
 class Rectangular_Tube(Cross_Section):
-    def __init__(self, height, width, thickness):
+    def __init__(self, height, width, thickness, Id = None):
         self.h = height
         self.w = width
         self.e = thickness
+        self.Id =Id
+        self.calcVariables()
+        
+    def calcVariables(self):
         hi = self.h - 2 * self.e
         wi = self.w - 2 * self.e
         self.A = self.w * self.h - wi * hi
@@ -76,6 +82,31 @@ class Rectangular_Tube(Cross_Section):
             
         return Qdivb
 
+class Square_Tube(Rectangular_Tube):
+    def __init__(self, side, thickness, Id = None):
+        self.h = side
+        self.w = side
+        self.e = thickness
+        self.calcVariables()
+        self.Id =Id
+        
+class Square_Diamond_Tube(Square_Tube):
+    def calcVariables(self):
+        hi = self.h - 2 * self.e
+        wi = self.w - 2 * self.e
+        self.A = self.w * self.h - wi * hi
+        self.I = (self.w * self.h ** 3 - wi * hi ** 3)/ 12
+        self.h = self.h/math.sqrt(2)
+        self.hi = self.h - self.e * math.sqrt(2)
+        
+    def calc_Qdivb(self,y):
+        y1 = abs(y)
+        if y1 < (self.hi):
+            Q = self.e*math.sqrt(2)*(self.hi**2-y1**2)+self.h**3/3-self.h*self.hi**2+2/3*self.hi**3
+            b = 2 * self.e * math.sqrt(2)
+            return Q/b
+        else:
+            return ((self.h-y1)**2 + 3 * y1 *(self.h-y1))/6
 
 class Material:
     def __init__(self, Young_module, yield_strength, density):
@@ -223,9 +254,9 @@ class Structure:
             
     def calc_VMstress(self, n=18,r=10):
         m = n*r
-        von_misses = np.zeros((n+1)*(m+1)*self.e_count)
-        x_values = np.zeros((n+1)*(m+1)*self.e_count)
-        y_values = np.zeros((n+1)*(m+1)*self.e_count)
+        self.von_misses = np.zeros((n+1)*(m+1)*self.e_count)
+        self.x_values = np.zeros((n+1)*(m+1)*self.e_count)
+        self.y_values = np.zeros((n+1)*(m+1)*self.e_count)
         k = -1
         for e in self.elements:
             u = - e.L/m
@@ -235,13 +266,14 @@ class Structure:
                 for j in range(0, n+1):
                     k +=1
                     v -= 2*e.cSection.h/n
-                    x_values[k] = e.node1.x + u * e.delta_x/e.L - v * e.delta_y/e.L
-                    y_values[k] = e.node1.y + u * e.delta_y/e.L + v * e.delta_x/e.L
-                    von_misses[k] = e.von_misses_stress(u, v)        
+                    self.x_values[k] = e.node1.x + u * e.delta_x/e.L - v * e.delta_y/e.L
+                    self.y_values[k] = e.node1.y + u * e.delta_y/e.L + v * e.delta_x/e.L
+                    self.von_misses[k] = e.von_misses_stress(u, v)        
         
-        all_values = list(zip(x_values,y_values,von_misses))
+    def sort_by_VMstress(self):
+        all_values = list(zip(self.x_values,self.y_values,self.von_misses))
         all_values = sorted(all_values, key=lambda values: values[2])
-        self.x_values, self.y_values, self.von_misses = zip(*all_values)
+        return zip(*all_values)
         
     def plot_VMstress(self):
         plt.clf()
@@ -253,5 +285,3 @@ class Structure:
         plt.colorbar()
         plt.show()
         
-
-    
