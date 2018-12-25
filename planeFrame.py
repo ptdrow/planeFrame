@@ -39,9 +39,9 @@ class Cross_Section:
         self.I = 2*self.I
     
 class Circular_Tube(Cross_Section):
-    def __init__(self, radius_external, radius_internal, Id = None):
+    def __init__(self, radius_external, thickness, Id = None):
         self.re = radius_external
-        self.ri = radius_internal
+        self.ri = radius_external - thickness
         self.A = math.pi * (pow(self.re,2) - pow(self.ri,2))
         self.I = math.pi * (pow(self.re,4) - pow(self.ri,4)) / 4
         self.h = radius_external
