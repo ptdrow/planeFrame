@@ -19,6 +19,7 @@ class Node:
         self.setDofs()
     
     def setForces(self, fx=0, fy=0, m=0):
+        """Sets the forces and moment in a 2d plane"""
         self.forces = np.array([fx, fy, m])
     
     def setDofs(self, x = True, y = True, angle = True):
